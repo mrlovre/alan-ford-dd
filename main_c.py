@@ -22,12 +22,12 @@ home_url = "https://striputopija.blogspot.com/p/alan-ford.html"
 soup = BeautifulSoup(request.urlopen(home_url), "html.parser")
 
 # %%
-subpages = soup.find_all("a", href=re.compile(r"striputopija.*201[0-9].*[0-9]{3}[-0-9]*\.html"))
+subpages = soup.find("u", string="KOLOR IZDANJA:").find_all_next("a", string=re.compile(r"[0-9]{3}\. "))
 subpages = [page for page in subpages if re.compile(r"[0-9]{3}\.").match(page.string or "")]
 
 # %%
-start = 75
-end = 200
+start = 1
+end = 100
 fails = []
 for i in range(start, end + 1):
     try:
@@ -39,7 +39,7 @@ for i in range(start, end + 1):
         pages = [page["href"] for page in pages]
         print(f"Doing '{title}': ", end="")
 
-        save_dir = f"_downloads/"
+        save_dir = f"_downloads/kolor/"
         Path(save_dir).mkdir(parents=True, exist_ok=True)
         if Path(save_dir + f"{title}.pdf").exists():
             print("already done!")
@@ -62,15 +62,10 @@ for i in range(start, end + 1):
 
                 if has_cover:
                     width, height = image.size
-
-                    image = image.convert("L")
-                    image = image.resize((4 * width // 2, 4 * height // 2), resample=PIL.Image.BICUBIC)
-                    image = ImageEnhance.Contrast(image).enhance(100.0)
-                    image = image.convert("1")
+                    # image = image.resize((width // 2, height // 2), resample=PIL.Image.BICUBIC)
 
                 out = BytesIO()
-                image.save(out, "tiff" if has_cover else "png")
-
+                image.save(out, "jpeg")
                 return out.getvalue()
 
             except Exception as e:
@@ -81,9 +76,6 @@ for i in range(start, end + 1):
         pages = iter(pages)
 
         cover = None
-
-        if i == 61:  # bugfix
-            next(pages)
 
         while cover is None:
             cover = download(next(pages))
